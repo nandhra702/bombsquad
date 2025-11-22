@@ -2,37 +2,7 @@
 # so i need to have 3 example 2d arrays
 
 
-
-def _count_adjacent_mines(self, row: int, col: int) -> int:
-        """Count the number of mines adjacent to a specific cell.
-
-        Args:
-            row: Row index of the cell
-            col: Column index of the cell
-
-        Returns:
-            Number of adjacent mines (0-8)
-        """
-        count: int = 0
-        # Check all 8 adjacent cells (including diagonals)
-        for dr in [-1, 0, 1]:
-            for dc in [-1, 0, 1]:
-                # Skip the center cell
-                if dr == 0 and dc == 0:
-                    continue
-                nr: int = row + dr
-                nc: int = col + dc
-                # Verify coordinates are within board bounds
-                if 0 <= nr < self.rows and 0 <= nc < self.cols:
-                    # Count if adjacent cell contains a mine
-                    if self.board[nr][nc] == -1:
-                        count += 1
-        return count
-
-
-
-
-board1 = [[0, 0, 0, 0, 1, 1, 1, 1, -1, 1],
+board = [[0, 0, 0, 0, 1, 1, 1, 1, -1, 1],
 [0, 0, 1, 1, 2, -1, 2, 1, 1, 2],
 [0, 0, 1, -1, 3, 2, 2, 0, 0, 1],
 [1, 1, 2, 2, -1, 1, 1, 0, 0, 1],
@@ -73,61 +43,48 @@ flagged = [[False, False, False, False, False, False, False, False, False, False
 #  2. IF A NUMBERED CELL HAS AS MANY FLAGGED CELLS AROUND IT AS THE NUMBER IT DISPLAYS, THEN ALL OTHER CLOSED CELLS AROUND IT ARE SAFE
 
 # so for each revealed cell, I need to check its neighbors and apply the above 2 rules.
-
 def naive_next_move(board, revealed, flagged):
     
+    # we are gonna collect moves
+    safe_moves = set()
+    mine_moves = set()
+
     for r in range(rows):
         for c in range(cols):
-            if revealed[r][c] and board[r][c] >0:
+
+            if revealed[r][c] and board[r][c] > 0:
                 # means, we need to check neighbors/check the number of mines.
-                # so, 
-                closed_cells = 0
+                closed_cells = []
                 flagged_cells = 0
 
-                for dr in (-1,0,1):
-                    for dc in (-1,0,1):
+                for dr in (-1, 0, 1):
+                    for dc in (-1, 0, 1):
                         if dr == 0 and dc == 0:
-                        continue
+                            continue
 
-                        nr: int = row + dr
-                        nc: int = col + dc
+                        nr = r + dr
+                        nc = c + dc
 
                         if 0 <= nr < rows and 0 <= nc < cols:
 
-                            if not revealed[nr][nc]:
-                                closed_cells += 1
                             if flagged[nr][nc]:
                                 flagged_cells += 1
-                
-                # ATP I have the number of closed cells and flagged cells around the current cell.
-                if closed_cells == board[r][c] - flagged_cells:
-                    # means all closed cells are mines. we need to make a move.
-                    # so we change the arrays accordingly.
-                    # now wherever I see closed cell, I'll flag it.
-                    for dr in (-1,0,1):
-                        for dc in (-1,0,1):
-                            if dr == 0 and dc == 0:
-                                continue
 
-                            nr: int = row + dr
-                            nc: int = col + dc
+                            elif not revealed[nr][nc]:
+                                closed_cells.append((nr, nc))
 
-                            if 0 <= nr < rows and 0 <= nc < cols:
-                                if not revealed[nr][nc]:
-                                    flagged[nr][nc] = True
+                number = board[r][c]
+            
+                # ATP I have the location of closed cells and flagged cells around the current cell.
 
-                elif flagged_cells == board[r][c]:
-                    # means all other closed cells are safe.
-                    for dr in (-1,0,1):
-                        for dc in (-1,0,1):
-                            if dr == 0 and dc == 0:
-                                continue
+                # Rule 1: closed cells == remaining mines → all are mines
+                if len(closed_cells) > 0 and len(closed_cells) == number - flagged_cells:
+                    for cell in closed_cells:
+                        mine_moves.add(cell)
 
-                            nr: int = row + dr
-                            nc: int = col + dc
+                # Rule 2: flagged cells == number → all closed cells are safe
+                if flagged_cells == number:
+                    for cell in closed_cells:
+                        safe_moves.add(cell)
 
-                            if 0 <= nr < rows and 0 <= nc < cols:
-                                if not revealed[nr][nc]:
-                                    revealed[nr][nc] = True
-
-    
+    return safe_moves, mine_moves
